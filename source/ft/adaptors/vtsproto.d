@@ -156,6 +156,7 @@ private:
     string appName = "facetrack-d";
     string phoneIP;
     float pollingFactor = 1;
+	bool stayAtPoseOnTrackingLost = false;
 
     // Sockets
     Socket vtsIn;
@@ -241,6 +242,14 @@ public:
             }
         }
 
+		if ("stayAtPoseOnTrackingLost" in options) {
+			try {
+				stayAtPoseOnTrackingLost = options["stayAtPoseOnTrackingLost"].to!bool;
+			} catch (Exception ex) {
+				return;
+			}
+		}
+
         // Do not create zombie threads please
         if (isRunning) this.stop();
 
@@ -297,6 +306,10 @@ public:
             VTSRawTrackingData data = tsdata.get();
             dataLossCounter = 0;
             gotDataFromFetch = data.faceFound;
+
+            if (stayAtPoseOnTrackingLost && !gotDataFromFetch) {
+                return;
+            }
 
             bones[BoneNames.ftHead] = Bone(
                 vec3(data.position.x*-1, data.position.y, data.position.z),
@@ -429,7 +442,8 @@ public:
         return [
             "phoneIP",
             "appName",
-            "pollingFactor"
+            "pollingFactor",
+			"stayAtPoseOnTrackingLost",
         ];
     }
 }
